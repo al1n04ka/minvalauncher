@@ -206,6 +206,11 @@ class MainActivity : Activity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        refresh()
+    }
+
     override fun onStop() {
         unregisterReceiver(batteryReceiver)
         super.onStop()
@@ -336,6 +341,16 @@ class MainActivity : Activity() {
     private fun refresh() {
         allApps = repository.loadApps(packageManager, packageName)
         groups = repository.loadGroups()
+        var groupsChanged = false
+        if (groups.none { it.id == "favorites" }) {
+            groups.add(0, AppGroup("favorites", "Favorites"))
+            groupsChanged = true
+        }
+        if (groups.none { it.id == "default" }) {
+            groups.add(AppGroup("default", "Default"))
+            groupsChanged = true
+        }
+        if (groupsChanged) repository.saveGroups(groups)
         applyTheme()
     }
 
@@ -698,6 +713,11 @@ class MainActivity : Activity() {
 
         section("SYSTEM")
         settingsContent.addView(action("SET AS HOME", palette.accent) { openHomeSettings() })
+        settingsContent.addView(verticalSpace(10))
+        settingsContent.addView(action("RESCAN APPS", palette.muted) {
+            refresh()
+            hideSettings()
+        })
 
         settingsContent.addView(verticalSpace(24))
         settingsContent.addView(label("LONG PRESS LIST TO OPEN SETTINGS", 11f, palette.muted))
